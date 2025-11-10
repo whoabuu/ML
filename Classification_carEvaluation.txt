@@ -1,0 +1,120 @@
+import pandas as pd
+------------------------------------------------
+df=pd.read_csv("Classification Datasets_Car_Evaluation.csv")
+df.head()
+------------------------------------------------
+df.describe()
+------------------------------------------------
+df.info()
+------------------------------------------------
+df.isnull()
+------------------------------------------------
+df.isnull().sum()
+------------------------------------------------
+df.tail(10)
+------------------------------------------------
+df.shape
+------------------------------------------------
+print(list(df.columns))
+------------------------------------------------
+from sklearn.preprocessing import LabelEncoder
+label = LabelEncoder()
+for col in df.columns:
+df[col]=label.fit_transform(df[col])
+df.head(5)
+------------------------------------------------
+print(label.classes_)
+------------------------------------------------
+df.plot.hist()
+------------------------------------------------
+df.plot(x="safety", y="class",kind="scatter")
+------------------------------------------------
+x=df.drop("class",axis =1)
+y =df["class"]
+------------------------------------------------
+print("x_shape",x.shape)
+print("y_shape",y.shape)
+------------------------------------------------
+from sklearn.model_selection import train_test_split
+------------------------------------------------
+X_train,X_test,y_train,y_test =train_test_split(x,y,test_size =0.2,random_state=42)
+print("train_size of X",X_train.shape)#training
+print("test_size of X",X_test.shape)#testing
+print("train_size of y",y_train.shape)
+print("test_size of y",y_test.shape)
+------------------------------------------------
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+------------------------------------------------
+model_dt = DecisionTreeClassifier(random_state =1)
+model_rf = RandomForestClassifier(random_state =1)
+model_lr = LogisticRegression(random_state=1,solver='lbfgs',max_iter=1000)
+------------------------------------------------
+model_dt.fit(X_train, y_train)
+------------------------------------------------
+model_rf.fit(X_train, y_train)
+------------------------------------------------
+model_lr.fit(X_train, y_train)
+------------------------------------------------
+from sklearn.metrics import classification_report,ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score
+------------------------------------------------
+y_pred_dt=model_dt.predict(X_test)
+y_pred_rf=model_rf.predict(X_test)
+y_pred_lr=model_lr.predict(X_test)
+------------------------------------------------
+import seaborn as sns
+------------------------------------------------
+import matplotlib.pyplot as plt
+ConfusionMatrixDisplay.from_predictions(y_test,y_pred_dt)
+plt.title("Decision Tree")
+plt.show()
+print(classification_report (y_test,y_pred_dt))
+------------------------------------------------
+ConfusionMatrixDisplay.from_predictions(y_test,y_pred_rf)
+plt.title('Random Forest')
+plt.show()
+print(classification_report(y_test,y_pred_rf))
+------------------------------------------------
+ConfusionMatrixDisplay.from_predictions(y_test,y_pred_lr)
+plt.title('Logistic Regression')
+plt.show()
+print(f" Accuracy is {accuracy_score(y_test,y_pred_lr)}")
+print(classification_report(y_test,y_pred_lr))
+------------------------------------------------
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+import numpy as np
+import matplotlib.pyplot as plt
+dt = DecisionTreeClassifier(random_state=42, max_depth=4)
+dt.fit(X_train, y_train)
+plt.figure(figsize=(20,10))
+feature_names = X_train.columns
+class_names = y.unique().astype(str)
+plot_tree(dt, filled=True, feature_names=feature_names, class_names=class_names,rounded=True)
+plt.title("Decision Tree Visualization")
+plt.show()
+------------------------------------------------
+from sklearn.preprocessing import label_binarize
+from sklearn.metrics import roc_curve,auc
+import matplotlib.pyplot as plt
+y_test_bin = label_binarize(y_test, classes=np.unique(y_test))
+fpr, tpr, _ = roc_curve(y_test_bin.ravel(), model_dt.predict_proba(X_test).ravel())
+plt.plot(fpr, tpr); plt.plot([0,1],[0,1],'k--'); plt.show()
+------------------------------------------------
+from sklearn.preprocessing import label_binarize
+from sklearn.metrics import roc_curve,auc
+import matplotlib.pyplot as plt
+y_test_bin = label_binarize(y_test, classes=np.unique(y_test))
+y_prob_bin = model_dt.predict_proba(X_test)
+fpr, tpr, _ = roc_curve(y_test_bin.ravel(), y_prob_bin.ravel())
+roc_auc = auc(fpr,tpr)    # <-- AUC line
+plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.2f}")
+plt.plot([0,1],[0,1],'k--')
+plt.xlabel("FPR")
+plt.ylabel("TPR")
+plt.title("Multiclass ROC (Micro Avg)")
+plt.legend()
+plt.show()
+print("AUC Score:", roc_auc)
+------------------------------------------------

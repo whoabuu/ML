@@ -1,0 +1,71 @@
+'''23) Association Rule mining datasets_Market_Basket_Optimisation
+Using this record of transactions and items in each transaction, find the association rules between items.
+There is no header in the dataset and the first row contains the first transaction, so mentioned header = None here while loading dataset.
+Follow following steps :
+Data Preprocessing
+Generate the list of transactions from the dataset
+Train Apriori algorithm on the dataset
+Visualize the list of rules'''
+------------------------------------------------
+import pandas as pd
+------------------------------------------------
+df=pd.read_csv("Association Rule mining datasets_Market_Basket_Optimisation.csv",header=None)
+'''header=None means the CSV file has no column names (since each row is just a list of items).
+each row= 1 Transaction'''
+df
+------------------------------------------------
+dataset = df.dropna(how='all')
+transactions = dataset.apply(lambda x: x.dropna().astype(str).tolist(), axis=1).tolist()
+'''dropna(how='all') removes rows that are completely empty.
+.apply(lambda x: …) converts each row into a list of non-empty items.
+transactions is now a list of lists — format required for Apriori.'''
+------------------------------------------------
+print("Total Transactions:", len(transactions))
+print("Sample Transaction:", transactions[0])
+------------------------------------------------
+'''Explanation:
+pandas → to handle dataset
+matplotlib → to visualize results
+apyori → provides Apriori algorithm implementation'''
+from apyori import apriori
+rules = apriori(transactions,
+min_support=0.003,        #min_support filters out infrequent items.
+min_confidence=0.2,                     # min_confidence ensures reliable associations.
+min_lift=3,                       # min_lift keeps only strong, meaningful rules.
+min_length=2)                        # min_length ensures that at least 2 items are involved.'''
+results = list(rules)
+------------------------------------------------
+simple_rules = []
+for rule in results: #
+for stat in rule.ordered_statistics: #  # Only take rules where both sides (base → add) are not empty
+if len(stat.items_base) > 0 and len(stat.items_add) > 0:
+simple_rules.append([
+list(stat.items_base)[0],   # Left-hand side item
+list(stat.items_add)[0],   # Right-hand side item
+round(rule.support, 3),
+round(stat.confidence, 3),
+round(stat.lift, 3)
+])
+'''Each rule contains combinations of items and metrics.
+We extract only LHS (base item) and RHS (added item) for simplicity.
+Lift shows how strongly items are associated.'''
+rules_df = pd.DataFrame(simple_rules, columns=['LHS', 'RHS', 'Support', 'Confidence', 'Lift'])
+rules_df = rules_df.sort_values(by='Lift', ascending=False)
+print(rules_df.head(10))
+------------------------------------------------
+import matplotlib.pyplot as plt
+plt.hist(rules_df['Lift'])
+plt.title('Distribution of Lift Values')
+plt.show()
+------------------------------------------------
+top_rules = rules_df.sort_values(by='Lift', ascending=False).head(10)
+plt.barh(top_rules['LHS'] , top_rules['RHS'], top_rules['Lift'])
+plt.xlabel('Lift')
+plt.ylabel('Rule')
+plt.title('Top 10 Association Rules')
+plt.show()
+------------------------------------------------
+plt.scatter(rules_df['Support'], rules_df['Confidence'])
+plt.title('Association Rules (Support vs Confidence)')
+plt.show()
+------------------------------------------------

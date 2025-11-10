@@ -1,0 +1,101 @@
+import pandas as pd
+------------------------------------------------
+'''Reads the file spam.csv which contains text messages.
+The dataset is tab-separated (\t), not comma-separated, so we specify sep='\t'.
+We rename columns as label (spam/ham) and message (SMS text).df.head() shows the first few rows.'''
+df = pd.read_csv("Navy Bays_SMSSpamCollection.CSV", sep='\t', header=None, names=['label', 'message'], encoding='latin-1')
+df.head()
+------------------------------------------------
+df.columns = ['label', 'message']
+df.info()
+------------------------------------------------
+df['label'] = df['label'].map({'ham': 0, 'spam': 1})
+------------------------------------------------
+df['label'].value_counts()
+------------------------------------------------
+from sklearn.feature_extraction.text import TfidfVectorizer
+tfidf = TfidfVectorizer(stop_words='english') # remove common words
+X = tfidf.fit_transform(df['message'])
+y = df['label']
+print("Shape of X:", X.shape)
+print("Shape of y:", y.shape)
+------------------------------------------------
+'''Divides the dataset into:
+Training data (80%) → used to train the model
+Testing data (20%) → used to test the model’s accuracy
+random_state=42 ensures the same split every time you run it.'''
+from sklearn.model_selection import train_test_split, cross_val_score
+X_train, X_test, y_train, y_test = train_test_split( X, y, test_size=0.2, random_state=42)
+print("Training samples:", X_train.shape)
+print("Testing samples:", X_test.shape)
+------------------------------------------------
+'''Creates a Multinomial Naive Bayes model — best for text classification problems.
+fit() trains the model on training data (X_train, y_train).'''
+from sklearn.naive_bayes import MultinomialNB
+model_m = MultinomialNB()
+model_m.fit(X_train, y_train)
+------------------------------------------------
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.metrics import accuracy_score
+------------------------------------------------
+model_bernoulli = BernoulliNB()
+model_bernoulli.fit(X_train, y_train)
+------------------------------------------------
+y_pred_b = model_bernoulli.predict(X_test)
+print("BernoulliNB Accuracy:", accuracy_score(y_test, y_pred_b))
+------------------------------------------------
+'''Uses the trained model to predict whether each test message is spam or ham.Stores predictions in y_pred.'''
+y_pred = model_m.predict(X_test)
+y_pred
+------------------------------------------------
+from sklearn.metrics import classification_report, confusion_matrix,ConfusionMatrixDisplay
+------------------------------------------------
+ConfusionMatrixDisplay.from_predictions(y_test,y_pred)
+print("Classification Report:\n")
+print(classification_report(y_test, y_pred))
+------------------------------------------------
+ConfusionMatrixDisplay.from_predictions(y_test,y_pred_b)
+print("Classification Report:\n")
+print(classification_report(y_test, y_pred_b))
+------------------------------------------------
+'''Performs 5-fold cross-validation (dataset split into 5 parts).
+Trains and tests model 5 times on different splits.
+cv_scores.mean() → average accuracy across all 5 folds.
+Helps check if the model is stable and not just lucky on one split.'''
+cv_scores = cross_val_score(model_m, X, y, cv=5)
+print("Cross-Validation Scores:", cv_scores)
+print("Average CV Accuracy:", cv_scores.mean())
+------------------------------------------------
+cv_scores = cross_val_score(model_bernoulli, X, y, cv=5, scoring='accuracy')
+print("Cross-Validation Scores:", cv_scores)
+print("Average CV Accuracy:", cv_scores.mean())
+------------------------------------------------
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+acc = accuracy_score(y_test, y_pred)
+prec = precision_score(y_test, y_pred)
+rec = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+cv_acc = cv_scores.mean()  # make sure cv_scores exists
+------------------------------------------------
+summary = pd.DataFrame({
+'Metric': ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'Cross-Val Accuracy'],
+'Score': [acc, prec, rec, f1, cv_scores.mean()]
+})
+summary
+------------------------------------------------
+new_messages = [
+"Congratulations! You have won a $500 Amazon gift card. Click here to claim.",
+"Hey, are we still meeting for lunch today?"
+]
+for msg in new_messages:
+pred = model_m.predict(tfidf.transform([msg]))[0]
+print(msg, "-->", "spam" if pred else "ham")
+------------------------------------------------
+from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import LogisticRegression
+params = {'C':[1,10]}   # just 2 options
+grid = GridSearchCV(LogisticRegression(), params, cv=3)
+grid.fit(X_train, y_train)
+print(grid.best_params_)
+print(grid.best_score_)
+------------------------------------------------

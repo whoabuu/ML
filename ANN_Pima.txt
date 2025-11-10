@@ -1,0 +1,78 @@
+'''6 Multilayer Neural Network Model
+Design and train an Artificial Neural Network (ANN) to predict diabetes diagnosis using medical data.
+Dataset: Pima Indians Diabetes Dataset
+Tasks:
+1. Load dataset and define ANN model using Keras.
+2. Use two hidden layers with ReLU activation and Sigmoid for the output layer.
+3. Compile and fit the model with suitable optimizer, epochs, and batch size.
+4. Evaluate performance for varying epochs and batch sizes.
+5. Experiment with different activation functions.
+6. Visualize the model using ANN Visualizer.'''
+------------------------------------------------
+import pandas as pd
+------------------------------------------------
+df = pd.read_csv("Navy Bays_pima-indians-diabetes.csv")
+df
+------------------------------------------------
+df.head()
+------------------------------------------------
+print(list(df.columns))
+------------------------------------------------
+df = df.dropna(how='all')
+------------------------------------------------
+from sklearn.model_selection import train_test_split
+X = df.drop('class', axis=1)
+y = df['class']
+------------------------------------------------
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+------------------------------------------------
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+le = LabelEncoder()
+df['class'] = le.fit_transform(df['class'])
+print(le.classes_)
+------------------------------------------------
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+------------------------------------------------
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Input
+model = Sequential([
+Input(shape=(X_train.shape[1],)),
+Dense(16, activation='relu'),
+Dense(8, activation='relu'),
+Dense(1, activation='sigmoid')
+])
+------------------------------------------------
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+------------------------------------------------
+history = model.fit(X_train, y_train,epochs=20, batch_size=16,validation_data=(X_test, y_test),verbose=1)
+------------------------------------------------
+loss, acc = model.evaluate(X_test, y_test)
+print("Accuracy:", acc)
+------------------------------------------------
+import matplotlib.pyplot as plt
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Test Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.title('Model Accuracy')
+plt.legend()
+plt.show()
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Test Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Model Loss')
+plt.legend()
+plt.show()
+------------------------------------------------
+new_customer = [[35, 1, 2, 3000, 0, 1, 15,10]]
+new_scaled = scaler.transform(new_customer)
+pred = model.predict(new_scaled)
+if pred >= 0.5:
+print("Customer will Subscribe")
+else:
+print("Customer will NOT Subscribe")
+------------------------------------------------

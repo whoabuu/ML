@@ -1,0 +1,95 @@
+import pandas as pd
+------------------------------------------------
+df = pd.read_csv('Admission_Predict - Admission_Predict.csv')
+df.head(5)
+------------------------------------------------
+df.isnull()
+------------------------------------------------
+df.isnull().sum()
+------------------------------------------------
+print(list(df.columns))
+------------------------------------------------
+df.shape
+------------------------------------------------
+df.columns = df.columns.str.strip()
+------------------------------------------------
+print(list(df.columns))
+------------------------------------------------
+df.shape
+------------------------------------------------
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+df['Chance of Admit'] = le.fit_transform(df['Chance of Admit'])
+------------------------------------------------
+print(le.classes_)
+------------------------------------------------
+df['Admit'] = (df['Chance of Admit'] >= 0.8).astype(int)
+df
+------------------------------------------------
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+df['Admit'] = le.fit_transform(df['Admit'])
+------------------------------------------------
+print(le.classes_)
+------------------------------------------------
+df.plot.hist()
+------------------------------------------------
+df.plot(x="SOP", y="Admit",kind="scatter")
+------------------------------------------------
+x=df.drop("Admit",axis =1)
+y =df["Admit"]
+------------------------------------------------
+print("x_shape",x.shape)
+print("y_shape",y.shape)
+------------------------------------------------
+from sklearn.model_selection import train_test_split
+------------------------------------------------
+X_train,X_test,y_train,y_test =train_test_split(x,y,test_size =0.2,random_state=42)
+print("train_size of X",X_train.shape)#training
+print("train_size of X",X_test.shape)#testing
+print("train_size of X",y_train.shape)
+print("train_size of X",y_test.shape)
+------------------------------------------------
+from sklearn.tree import DecisionTreeClassifier
+------------------------------------------------
+model_dt = DecisionTreeClassifier(random_state =1)
+------------------------------------------------
+model_dt.fit(X_train, y_train)
+------------------------------------------------
+from sklearn.metrics import classification_report,ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score
+------------------------------------------------
+y_pred_dt=model_dt.predict(X_test)
+------------------------------------------------
+import matplotlib.pyplot as plt
+plt.figure(figsize=(20,10))
+ConfusionMatrixDisplay.from_predictions(y_test,y_pred_dt)
+plt.title("Decision Tree")
+plt.show()
+print(classification_report (y_test,y_pred_dt))
+------------------------------------------------
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+import numpy as np
+import matplotlib.pyplot as plt
+dt = DecisionTreeClassifier(random_state=42, max_depth=4)
+dt.fit(X_train, y_train)
+plt.figure(figsize=(20,10))
+feature_names = X_train.columns
+class_names = y.unique().astype(str)
+plot_tree(dt, filled=True, feature_names=feature_names, class_names=class_names,rounded=True)
+plt.title("Decision Tree Visualization")
+plt.show()
+------------------------------------------------
+from sklearn.metrics import roc_curve, auc
+import matplotlib.pyplot as plt
+y_prob = model_dt.predict_proba(X_test)[:, 1]
+fpr, tpr, _ = roc_curve(y_test, y_prob)
+roc_auc = auc(fpr, tpr)
+plt.plot(fpr, tpr, label=f'AUC = {roc_auc:.2f}')
+plt.plot([0,1], [0,1], '--', color='gray')  # diagonal
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve')
+plt.legend()
+plt.show()
+------------------------------------------------

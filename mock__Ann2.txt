@@ -1,0 +1,139 @@
+import pandas as pd
+df = pd.read_csv("ANN_Bank_Marketing.csv")
+------------------------------------------------
+df.head()
+------------------------------------------------
+df.columns
+------------------------------------------------
+df.describe()
+------------------------------------------------
+df = df.dropna(how='all')
+------------------------------------------------
+'''
+get_dummies() → converts categorical (text) columns into numeric form by creating new binary columns (0 or 1)
+for each category — this process is called One-Hot Encoding.
+drop_first=True → removes one dummy column to avoid "dummy variable trap" (redundant data causing multicollinearity).
+In short:
+This step transforms all text-based features into numbers so that the ANN model can understand and process them.
+'''
+df = pd.get_dummies(df, drop_first=True)
+------------------------------------------------
+from sklearn.model_selection import train_test_split
+X = df.drop('y_yes', axis=1)
+y = df['y_yes']
+------------------------------------------------
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+------------------------------------------------
+'''LabelEncoder changes text labels into numbers so model can understand them.
+print(le.classes_) shows all unique class names present in the target column.
+If it prints 2 classes → it's a Binary Classification (like 0 = No, 1 = Yes)'''
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+le = LabelEncoder()
+df['y_yes'] = le.fit_transform(df['y_yes'])
+print(le.classes_)
+------------------------------------------------
+'''
+StandardScaler makes all features equal in range (mean=0, std=1).
+This helps the ANN train faster and gives better accuracy.
+Without scaling, large-valued features can dominate smaller ones.
+'''
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+------------------------------------------------
+'''
+Build ANN (Artificial Neural Network) Model
+This is the main part where we design the ANN structure (the brain of the model).
+Sequential() => builds the network layer by layer (step-by-step).
+Input(shape=(X_train.shape[1],)) => defines how many features go into the model.
+Dense(64, activation='relu') => is the first hidden layer with 64 neurons;
+'relu' (Rectified Linear Unit) helps the model learn complex non-linear patterns.
+Dense(32, activation='relu') => is the second hidden layer for deeper feature learning.
+Dense(y_train_cat.shape[1], activation='softmax') => is the output layer;
+'softmax' gives class probabilities and is used for multi-class classification.
+In short:
+Input layer → Hidden layers → Output layer
+'''
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Input
+model = Sequential([
+Input(shape=(X_train.shape[1],)),
+Dense(16, activation='relu'),
+Dense(8, activation='relu'),
+Dense(1, activation='sigmoid')
+])
+------------------------------------------------
+'''
+This line sets how the model will learn and measure performance.
+optimizer = 'adam' → Adaptive optimizer that automatically adjusts learning rate for faster and smoother training.
+loss = 'binary_crossentropy' → used when the target has only two classes (binary classification: 0 or 1).
+metrics = ['accuracy'] → shows how correctly the model predicts during training and testing.
+In short:
+This prepares the model for training — defining how it learns (optimizer),
+how it measures errors (loss), and what result to display (accuracy).
+'''
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+------------------------------------------------
+'''
+model.fit() → starts the learning process of the ANN.
+X_train, y_train → training data (inputs and actual outputs).
+epochs=20 → model will pass through the entire training data 20 times to learn patterns.
+batch_size=16 → divides data into batches of 16 samples for each update step, making training efficient.
+validation_data=(X_test, y_test) → checks model’s performance on unseen test data after each epoch.
+verbose=1 → displays progress of training for each epoch.
+In short:
+This step teaches the model using training data and monitors how well it performs on test data after every round.
+'''
+history = model.fit(X_train, y_train,epochs=20, batch_size=16,validation_data=(X_test, y_test),verbose=1)
+------------------------------------------------
+'''
+model.evaluate() → tests the trained model using unseen (test) data.
+X_test, y_test_cat → input and actual output of test data.
+It returns two values:
+loss → how far the model’s predictions are from the actual results.
+acc  → accuracy of the model on test data.
+print("Accuracy:", acc) → displays the final accuracy score of the model.
+In short:
+This step checks how well the model learned and performs on new, unseen data.
+'''
+loss, acc = model.evaluate(X_test, y_test)
+print("Accuracy:", acc)
+------------------------------------------------
+'''
+After training, we visualize how the model performed over time.
+Accuracy Plot:
+- history.history['accuracy'] → training accuracy at each epoch.
+- history.history['val_accuracy'] → testing accuracy at each epoch.
+Helps check if the model is learning well or overfitting.
+Loss Plot:
+- history.history['loss'] → training loss (error).
+- history.history['val_loss'] → validation loss (error on test data).
+Lower loss and stable curves mean better performance.
+In short:
+These plots show the learning progress of the model — how accuracy improves and loss decreases with epochs.
+'''
+import matplotlib.pyplot as plt
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Test Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.title('Model Accuracy')
+plt.legend()
+plt.show()
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Test Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Model Loss')
+plt.legend()
+plt.show()
+------------------------------------------------
+new_patient = [[6, 148, 72, 35, 0, 33.6, 0.627, 50,50,1,23,3,2,4,24,24,45,45435,2,4,3,54,2,5,24,1,1,12,3,4,24,5,23,24,24,34,35,1]]
+new_scaled = scaler.transform(new_patient)
+pred = model.predict(new_scaled)
+if pred >= 0.5:
+print("Diabetic")
+else:
+print("Not Diabetic")
+------------------------------------------------
